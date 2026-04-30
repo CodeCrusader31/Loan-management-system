@@ -9,10 +9,13 @@ type AddPaymentParams = {
   loanId: string;
 };
 
+const roundMoney = (value: number) => Math.round(value * 100) / 100;
+
 export const addPayment = async (req: Request<AddPaymentParams>, res: Response, next: NextFunction) => {
   try {
     const { loanId } = req.params;
-    const { utrNumber, amount } = req.body;
+    const { utrNumber } = req.body;
+    const amount = roundMoney(req.body.amount);
     const createdBy = req.user?.userId;
 
     if (!mongoose.isValidObjectId(loanId)) {
@@ -30,9 +33,17 @@ export const addPayment = async (req: Request<AddPaymentParams>, res: Response, 
       throw new ApiError(400, 'Can only add payments to disbursed loans');
     }
 
-    if (amount > loan.outstandingAmount) {
-      throw new ApiError(400, 'Payment amount cannot exceed outstanding amount');
-    }
+    const outstandingAmount = roundMoney(loan.outstandingAmount);
+
+    // if (amount > outstandingAmount) {
+    //   throw new ApiError(400, 'Payment amount cannot exceed outstanding amount');
+    // }
+
+    const EPSILON = 0.01;
+
+if (amount - outstandingAmount > EPSILON) {
+  throw new ApiError(400, 'Payment amount cannot exceed outstanding amount');
+}
 
     const existingPayment = await Payment.findOne({ utrNumber });
     if (existingPayment) {
@@ -46,12 +57,18 @@ export const addPayment = async (req: Request<AddPaymentParams>, res: Response, 
       createdBy: new mongoose.Types.ObjectId(createdBy),
     });
 
-    loan.paidAmount += amount;
-    loan.outstandingAmount -= amount;
+    const newOutstandingAmount = roundMoney(outstandingAmount - amount);
+    loan.paidAmount = roundMoney(loan.paidAmount + amount);
+    loan.outstandingAmount = newOutstandingAmount <= 0 ? 0 : newOutstandingAmount;
 
-    if (loan.outstandingAmount <= 0) {
-      loan.status = 'CLOSED';
-    }
+    // if (loan.outstandingAmount === 0) {
+    //   loan.status = 'CLOSED';
+    // }
+
+    if (loan.outstandingAmount <= 0.01) {
+  loan.outstandingAmount = 0;
+  loan.status = 'CLOSED';
+}
 
     await loan.save();
 

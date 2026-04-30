@@ -2,10 +2,11 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { User } from '../models/user.model';
 import { connectDB } from '../config/db';
+import { Role } from '../types';
 
 dotenv.config();
 
-const users = [
+const users: Array<{ name: string; email: string; password: string; role: Role }> = [
   { name: 'Admin', email: 'admin@test.com', password: 'password123', role: 'ADMIN' },
   { name: 'Sales Exec', email: 'sales@test.com', password: 'password123', role: 'SALES' },
   { name: 'Sanction Exec', email: 'sanction@test.com', password: 'password123', role: 'SANCTION' },
@@ -21,7 +22,7 @@ const seedData = async () => {
     await User.deleteMany();
     
     console.log('Seeding predefined users...');
-    await User.insertMany(users);
+    await User.create(users);
     
     console.log('✅ Seeding completed successfully!');
     process.exit();

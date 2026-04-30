@@ -1,16 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { Application } from '../models/application.model';
+import { Loan } from '../models/loan.model';
 import { ApiError } from '../utils/ApiError';
 import { ApiResponse } from '../utils/ApiResponse';
 import { evaluateEligibility } from '../services/bre.service';
+import { LoanStatus } from '../types';
+
+const activeLoanStatuses: LoanStatus[] = ['APPLIED', 'SANCTIONED', 'DISBURSED'];
 
 export const submitPersonalDetails = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.userId;
 
-    const existingApp = await Application.findOne({ userId });
-    if (existingApp) {
-      throw new ApiError(400, 'Application already exists for this user');
+    const activeLoan = await Loan.findOne({ userId, status: { $in: activeLoanStatuses } });
+    if (activeLoan) {
+      throw new ApiError(400, 'You already have an active loan application. Apply again after it is closed.');
     }
 
     const applicationData = { ...req.body, userId };
@@ -37,7 +41,7 @@ export const uploadSalarySlip = async (req: Request, res: Response, next: NextFu
     const application = await Application.findOneAndUpdate(
       { userId },
       { salarySlipUrl },
-      { new: true }
+      { new: true, sort: { createdAt: -1 } }
     );
 
     if (!application) {
