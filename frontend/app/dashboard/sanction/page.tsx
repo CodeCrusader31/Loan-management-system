@@ -6,14 +6,16 @@ import { Loan, User } from '@/types';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
+import { SanctionLoanDetailsModal } from '@/components/SanctionLoanDetailsModal';
 import toast from 'react-hot-toast';
 import { X } from 'lucide-react';
 
 export default function SanctionDashboard() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Modal state
+
+  // ✅ Modal states
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'SANCTIONED' | 'REJECTED' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -44,10 +46,11 @@ export default function SanctionDashboard() {
     setIsProcessing(true);
     try {
       await api.patch(`/dashboard/loan/${selectedLoanId}/sanction`, {
-        status: actionType
+        status: actionType,
       });
       toast.success(`Loan ${actionType.toLowerCase()} successfully`);
       fetchSanctionData();
+      setSelectedLoan(null);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Action failed');
     } finally {
@@ -81,19 +84,29 @@ export default function SanctionDashboard() {
       header: 'Actions',
       accessor: (row) => (
         <div className="flex space-x-2">
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             className="text-xs py-1 h-8"
             onClick={() => handleActionClick(row._id, 'SANCTIONED')}
           >
             Approve
           </Button>
-          <Button 
-            variant="danger" 
+
+          <Button
+            variant="danger"
             className="text-xs py-1 h-8 bg-red-100 text-red-700 hover:bg-red-200 border-none"
             onClick={() => handleActionClick(row._id, 'REJECTED')}
           >
             Reject
+          </Button>
+
+          {/* ✅ View Details Button */}
+          <Button
+            variant="outline"
+            className="text-xs py-1 h-8"
+            onClick={() => setSelectedLoan(row)}
+          >
+            View Details
           </Button>
         </div>
       ),
@@ -103,8 +116,12 @@ export default function SanctionDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Sanction Dashboard</h1>
-        <p className="text-gray-500 mt-1">Review and approve or reject applied loans.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+          Sanction Dashboard
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Review and approve or reject applied loans.
+        </p>
       </div>
 
       <DataTable
@@ -115,7 +132,16 @@ export default function SanctionDashboard() {
         emptyMessage="No applied loans pending sanction."
       />
 
-      {/* Confirmation Modal */}
+      {/* ✅ Loan Details Modal */}
+      {selectedLoan && (
+        <SanctionLoanDetailsModal
+          loan={selectedLoan}
+          onClose={() => setSelectedLoan(null)}
+          onDecision={handleActionClick}
+        />
+      )}
+
+      {/* ✅ Confirmation Modal */}
       {selectedLoanId && actionType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
@@ -123,33 +149,36 @@ export default function SanctionDashboard() {
               <h3 className="text-lg font-semibold text-gray-900">
                 Confirm {actionType === 'SANCTIONED' ? 'Approval' : 'Rejection'}
               </h3>
-              <button 
+              <button
                 onClick={() => setSelectedLoanId(null)}
                 className="text-gray-400 hover:text-gray-500"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
+
             <div className="p-6">
               <p className="text-gray-600 mb-4">
-                Are you sure you want to {actionType === 'SANCTIONED' ? 'approve' : 'reject'} this loan?
+                Are you sure you want to{' '}
+                {actionType === 'SANCTIONED' ? 'approve' : 'reject'} this loan?
                 This action cannot be undone.
               </p>
-              
+
               <div className="flex justify-end space-x-3 mt-6">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setSelectedLoanId(null)}
                   disabled={isProcessing}
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   variant={actionType === 'SANCTIONED' ? 'primary' : 'danger'}
                   onClick={submitAction}
                   isLoading={isProcessing}
                 >
-                  Confirm {actionType === 'SANCTIONED' ? 'Approval' : 'Rejection'}
+                  Confirm{' '}
+                  {actionType === 'SANCTIONED' ? 'Approval' : 'Rejection'}
                 </Button>
               </div>
             </div>

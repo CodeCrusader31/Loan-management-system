@@ -19,7 +19,9 @@ export const getSalesDashboard = async (req: Request, res: Response, next: NextF
 
 export const getSanctionDashboard = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const appliedLoans = await Loan.find({ status: 'APPLIED' }).populate('applicationId userId');
+    const appliedLoans = await Loan.find({ status: 'APPLIED' })
+      .populate('userId')
+      .populate('applicationId');
     res.status(200).json(new ApiResponse(200, appliedLoans, 'Sanction dashboard data fetched'));
   } catch (error) {
     next(error);
