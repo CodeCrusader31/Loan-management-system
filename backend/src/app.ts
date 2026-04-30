@@ -12,7 +12,10 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: '*', // Configure this to specific domains in production
+    origin: [
+      "https://loan-management-system-kohl.vercel.app",
+      "http://localhost:3000"
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   })
