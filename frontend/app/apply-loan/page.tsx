@@ -80,32 +80,56 @@ export default function ApplyLoanPage() {
       await api.post('/application/personal-details', data);
       toast.success('Details verified successfully');
       setStep(2);
-    } catch (error: any) {
-      const msg = error.response?.data?.message || 'Application rejected by BRE';
+    } catch (error: Error | unknown) {
+      const msg = error instanceof Error ? error.message : 'Application rejected by BRE';
       setBreError(msg);
       toast.error(msg);
     }
   };
 
+
   const handleFileUpload = async () => {
-    if (!slipFile && !slipUrl) {
-      toast.error('Please upload or provide a slip URL');
-      return;
+  if (!slipFile && !slipUrl) {
+    toast.error('Please upload or provide a slip URL');
+    return;
+  }
+
+  setIsUploading(true);
+
+  try {
+    // ✅ CASE 1: File upload (Cloudinary)
+    if (slipFile) {
+      const formData = new FormData();
+      formData.append('file', slipFile);
+
+      await api.post('/application/upload-slip', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } 
+    // ✅ CASE 2: URL fallback
+    else {
+      await api.post('/application/upload-slip', {
+        salarySlipUrl: slipUrl,
+      });
     }
-    
-    setIsUploading(true);
-    try {
-      // Fake upload for assignment, or if actual endpoint takes URL:
-      const finalUrl = slipUrl || 'https://example.com/uploaded-slip.pdf';
-      await api.post('/application/upload-slip', { salarySlipUrl: finalUrl });
-      toast.success('Salary slip uploaded successfully');
-      setStep(3);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to upload slip');
-    } finally {
-      setIsUploading(false);
+
+    toast.success('Salary slip uploaded successfully');
+    setStep(3);
+  } catch (error: Error | unknown) {
+    if (error instanceof Error) {
+      toast.error(error.message);
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      toast.error(apiError.response?.data?.message || 'Failed to upload slip');
+    } else {
+      toast.error('Failed to upload slip');
     }
-  };
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   const handleApplyLoan = async () => {
     setApplyError(null);
@@ -117,8 +141,8 @@ export default function ApplyLoanPage() {
       });
       toast.success('Loan application submitted successfully!');
       setStep(4);
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to apply for loan';
+    } catch (error: Error | unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to apply for loan';
       setApplyError(message);
       toast.error(message);
     } finally {
@@ -218,7 +242,7 @@ export default function ApplyLoanPage() {
               </form>
             )}
 
-            {step === 2 && (
+            {/* {step === 2 && (
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold text-gray-900">Upload Salary Slip</h3>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors bg-gray-50">
@@ -247,8 +271,70 @@ export default function ApplyLoanPage() {
                   <Button onClick={handleFileUpload} isLoading={isUploading}>Upload & Continue</Button>
                 </div>
               </div>
-            )}
+            )} */}
 
+            {step === 2 && (
+  <div className="space-y-6">
+    <h3 className="text-xl font-semibold text-gray-900">Upload Salary Slip</h3>
+
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors bg-gray-50">
+      <div className="space-y-2">
+        <div className="flex text-sm text-gray-600 justify-center">
+          <label className="relative cursor-pointer rounded-md bg-white font-medium text-blue-600 hover:text-blue-500 p-1 px-2 border">
+            <span>Upload a file</span>
+            <input
+              type="file"
+              className="sr-only"
+              accept=".pdf,.png,.jpg,.jpeg"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                if (file.size > 5 * 1024 * 1024) {
+                  toast.error('File size must be less than 5MB');
+                  return;
+                }
+
+                setSlipFile(file);
+                setSlipUrl('');
+              }}
+            />
+          </label>
+          <p className="pl-1 py-1">or drag and drop</p>
+        </div>
+        <p className="text-xs text-gray-500">PDF, PNG, JPG up to 5MB</p>
+      </div>
+
+      {slipFile && (
+        <div className="mt-4 p-3 bg-blue-50 text-blue-700 text-sm rounded-md inline-flex items-center gap-2">
+          📄 {slipFile.name}
+        </div>
+      )}
+    </div>
+
+    <div className="text-center text-sm text-gray-500 my-2">OR provide URL</div>
+
+    <Input
+      value={slipUrl}
+      onChange={(e) => {
+        setSlipUrl(e.target.value);
+        setSlipFile(null);
+      }}
+      placeholder="https://example.com/slip.pdf"
+    />
+
+    <div className="flex justify-between pt-4">
+      <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+      <Button
+        onClick={handleFileUpload}
+        isLoading={isUploading}
+        disabled={!slipFile && !slipUrl}
+      >
+        Upload & Continue
+      </Button>
+    </div>
+  </div>
+)}
             {step === 3 && (
               <div className="space-y-8">
                 <h3 className="text-xl font-semibold text-gray-900">Configure Loan</h3>

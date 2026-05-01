@@ -25,11 +25,17 @@ const fileFilter = (
 // Cloudinary storage
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, file) => ({
-    folder: "salary_slips",
-    resource_type: "auto", // IMPORTANT for PDF support
-    public_id: Date.now() + "-" + file.originalname,
-  }),
+  params: async (req, file) => {
+    const originalName = file.originalname.split('.').slice(0, -1).join('.'); // remove extension
+
+    return {
+      folder: "salary_slips",
+      resource_type: "auto",
+
+      // ✅ NO extension here
+      public_id: Date.now() + "-" + originalName,
+    };
+  },
 });
 
 export const upload = multer({

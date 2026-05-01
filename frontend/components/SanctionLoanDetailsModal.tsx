@@ -1,5 +1,7 @@
 'use client';
-import { AlertCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { useState } from 'react';
+import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { Application, Loan, User } from '@/types';
 import { Button } from '@/components/ui/Button';
@@ -63,21 +65,71 @@ const DetailRow = ({ label, value }: { label: string; value: ReactNode }) => (
 );
 
 // ✅ Simplified Document Link (no preview)
+// const DocumentLink = ({ url, label }: { url?: string; label: string }) => {
+//   if (!url) return <span>Not uploaded</span>;
+
+//   return (
+//     <a
+//       href={url}
+//       target="_blank"
+//       rel="noreferrer"
+//       className="text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+//     >
+//       {label}
+//     </a>
+//   );
+// };
+
 const DocumentLink = ({ url, label }: { url?: string; label: string }) => {
+  const [showPreview, setShowPreview] = useState(false);
+
   if (!url) return <span>Not uploaded</span>;
 
+  const isPDF = url.toLowerCase().endsWith('.pdf');
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      className="text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
-    >
-      {label}
-    </a>
+    <div className="space-y-2">
+      {/* Open in new tab */}
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="text-blue-600 hover:underline"
+      >
+        {label}
+      </a>
+
+      {/* Toggle preview */}
+      <button
+        onClick={() => setShowPreview(!showPreview)}
+        className="text-xs text-gray-500 underline"
+      >
+        {showPreview ? 'Hide Preview' : 'Preview'}
+      </button>
+
+      {/* Preview */}
+      {showPreview && (
+        <div className="border rounded-md overflow-hidden">
+          {isPDF ? (
+            <iframe
+              src={url}
+              className="w-full h-64"
+              title="PDF Preview"
+            />
+          ) : (
+            <Image
+              src={url}
+              alt="Document"
+              width={600}
+              height={256}
+              className="w-full max-h-64 object-contain"
+            />
+          )}
+        </div>
+      )}
+    </div>
   );
 };
-
 export function SanctionLoanDetailsModal({
   loan,
   onClose,

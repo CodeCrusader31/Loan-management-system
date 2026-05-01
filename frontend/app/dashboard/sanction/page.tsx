@@ -33,7 +33,17 @@ export default function SanctionDashboard() {
   };
 
   useEffect(() => {
-    fetchSanctionData();
+    (async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get('/dashboard/sanction');
+        setLoans(getApiData<Loan[]>(response));
+      } catch (error) {
+        console.error('Failed to fetch sanction data', error);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, []);
 
   const handleActionClick = (loanId: string, type: 'SANCTIONED' | 'REJECTED') => {
@@ -49,10 +59,11 @@ export default function SanctionDashboard() {
         status: actionType,
       });
       toast.success(`Loan ${actionType.toLowerCase()} successfully`);
-      fetchSanctionData();
+      void fetchSanctionData();
       setSelectedLoan(null);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Action failed');
+    } catch (error: Error | unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Action failed';
+      toast.error(errorMsg);
     } finally {
       setIsProcessing(false);
       setSelectedLoanId(null);
