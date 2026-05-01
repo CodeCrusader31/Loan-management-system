@@ -242,36 +242,7 @@ export default function ApplyLoanPage() {
               </form>
             )}
 
-            {/* {step === 2 && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">Upload Salary Slip</h3>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors bg-gray-50">
-                  <div className="space-y-2">
-                    <div className="flex text-sm text-gray-600 justify-center">
-                      <label className="relative cursor-pointer rounded-md bg-white font-medium text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 hover:text-blue-500 p-1 px-2 border">
-                        <span>Upload a file</span>
-                        <input type="file" className="sr-only" accept=".pdf,.png,.jpg,.jpeg" onChange={(e) => setSlipFile(e.target.files?.[0] || null)} />
-                      </label>
-                      <p className="pl-1 py-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">PDF, PNG, JPG up to 5MB</p>
-                  </div>
-                  {slipFile && (
-                    <div className="mt-4 p-2 bg-blue-50 text-blue-700 text-sm rounded-md inline-block">
-                      Selected: {slipFile.name}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="text-center text-sm text-gray-500 my-2">OR provide URL</div>
-                <Input value={slipUrl} onChange={(e) => setSlipUrl(e.target.value)} placeholder="https://example.com/slip.pdf" />
-
-                <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                  <Button onClick={handleFileUpload} isLoading={isUploading}>Upload & Continue</Button>
-                </div>
-              </div>
-            )} */}
+            
 
             {step === 2 && (
   <div className="space-y-6">
